@@ -1,0 +1,172 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum Severity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum Status {
+  DETECTED
+  TRIAGED
+  ANALYZING
+  FIX_GENERATED
+  IN_REVIEW
+  DEPLOYED
+  RESOLVED
+}
+
+model User {
+  id                String        @id @default(cuid())
+  name              String?
+  email             String        @unique
+  password          String
+  createdAt         DateTime      @default(now())
+  orgMemberships    OrgMember[]
+  incidentsAssigned Incident[]    @relation("AssignedIncidents")
+}
+
+model Org {
+  id        String      @id @default(cuid())
+  name      String
+  slug      String      @unique
+  createdAt DateTime    @default(now())
+  members   OrgMember[]
+  projects  Project[]
+}
+
+model OrgMember {
+  id       String   @id @default(cuid())
+  userId   String
+  orgId    String
+  role     Role     @default(MEMBER)
+  joinedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  org  Org  @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, orgId])
+}
+
+model Project {
+  id        String     @id @default(cuid())
+  orgId     String
+  name      String
+  repoUrl   String
+  createdAt DateTime   @default(now())
+  incidents Incident[]
+  apiKeys   ApiKey[]
+
+  org Org @relation(fields: [orgId], references: [id], onDelete: Cascade)
+}
+
+model Incident {
+  id              String       @id @default(cuid())
+  projectId       String
+  title           String
+  severity        Severity     @default(MEDIUM)
+  status          Status       @default(DETECTED)
+  errorMessage    String
+  aiSummary       String?      @db.Text
+  aiTags          String[]     @default([])
+  triagedAt       DateTime?
+  assigneeId      String?
+  fingerprint     String?
+  occurrenceCount Int          @default(1)
+  lastSeenAt      DateTime     @default(now())
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  rootCauseCommitId String?    @unique
+  rootCauseCommit   Commit?    @relation("RootCauseCommit", fields: [rootCauseCommitId], references: [id], onDelete: SetNull)
+
+  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignee    User?        @relation("AssignedIncidents", fields: [assigneeId], references: [id], onDelete: SetNull)
+  stackFrames StackFrame[]
+  commits     Commit[]     @relation("IncidentCandidateCommits")
+  fixes       Fix[]
+  auditLogs   AuditLog[]
+
+  @@index([projectId, fingerprint])
+}
+
+model ApiKey {
+  id         String    @id @default(cuid())
+  projectId  String
+  key        String    @unique
+  name       String
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
+  revoked    Boolean   @default(false)
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model StackFrame {
+  id           String   @id @default(cuid())
+  incidentId   String
+  filePath     String
+  lineNumber   Int
+  functionName String
+  order        Int
+
+  incident Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+}
+
+model Commit {
+  id              String   @id @default(cuid())
+  incidentId      String?
+  hash            String
+  author          String
+  message         String
+  timestamp       DateTime
+  confidenceScore Float?
+  reasoning       String?  @db.Text
+
+  incident             Incident? @relation("IncidentCandidateCommits", fields: [incidentId], references: [id], onDelete: Cascade)
+  rootCauseForIncident Incident? @relation("RootCauseCommit")
+}
+
+enum FixStatus {
+  DRAFT
+  PR_OPENED
+  FAILED
+}
+
+model Fix {
+  id            String    @id @default(cuid())
+  incidentId    String
+  diff          String    @db.Text
+  prUrl         String?
+  prTitle       String?
+  prDescription String?   @db.Text
+  branchName    String?
+  status        FixStatus @default(DRAFT)
+  createdAt     DateTime  @default(now())
+
+  incident Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  incidentId String
+  type       String
+  message    String
+  createdAt  DateTime @default(now())
+
+  incident Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+}
