@@ -80,6 +80,14 @@ export async function generateAndOpenFix({
     return { success: false, error: errorMsg };
   }
 
+  // Intermediate state FIX_GENERATED: patch generation succeeded, proceeding to PR creation
+  try {
+    const { transitionIncident } = await import("@/lib/workflow/status");
+    await transitionIncident(incident.id, "FIX_GENERATED", "system");
+  } catch (tErr) {
+    console.warn("[Apply Fix] Failed setting status to FIX_GENERATED:", tErr);
+  }
+
   // 2. Parse repo
   const parsedRepo = parseOwnerRepo(projectRepoUrl);
   if (!parsedRepo) {
@@ -149,6 +157,7 @@ export async function generateAndOpenFix({
         incidentId: incident.id,
         diff: diffSummary,
         prUrl: prResult.prUrl,
+        prNumber: prResult.prNumber,
         prTitle: fixResult.prTitle,
         prDescription: fixResult.prDescription,
         branchName: branchName,
@@ -156,13 +165,11 @@ export async function generateAndOpenFix({
       },
     });
 
-    // 5. Update Incident status to IN_REVIEW
-    await db.incident.update({
-      where: { id: incident.id },
-      data: { status: "IN_REVIEW" },
-    });
+    // 5. Update Incident status to IN_REVIEW via status workflow
+    const { transitionIncident } = await import("@/lib/workflow/status");
+    const updatedIncident = await transitionIncident(incident.id, "IN_REVIEW", "system");
 
-    // 6. Add AuditLog
+    // 6. Add AuditLog & emit HOTFIX_PR_OPENED event
     await db.auditLog.create({
       data: {
         incidentId: incident.id,
@@ -170,6 +177,19 @@ export async function generateAndOpenFix({
         message: `Hotfix PR opened: ${prResult.prUrl}`,
       },
     });
+
+    const { emitEvent } = await import("@/lib/events/dispatcher");
+    if (updatedIncident.project?.org) {
+      emitEvent({
+        type: "HOTFIX_PR_OPENED",
+        payload: {
+          incident: updatedIncident,
+          org: updatedIncident.project.org,
+          prUrl: prResult.prUrl,
+          branchName,
+        },
+      });
+    }
 
     return {
       success: true,

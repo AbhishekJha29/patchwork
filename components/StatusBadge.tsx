@@ -3,15 +3,6 @@
 import React from "react";
 import { Status } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import {
-  Radar,
-  FileSearch,
-  Sparkles,
-  GitPullRequest,
-  Eye,
-  Rocket,
-  CheckCircle2,
-} from "lucide-react";
 
 interface StatusBadgeProps {
   status: Status;
@@ -21,58 +12,58 @@ interface StatusBadgeProps {
 export function StatusBadge({ status, className }: StatusBadgeProps) {
   const configs: Record<
     Status,
-    { label: string; bg: string; icon: React.ElementType }
+    { label: string; bg: string; dot: string }
   > = {
     detected: {
-      label: "Detected",
-      bg: "bg-red-500/10 border-red-500/30 text-red-400",
-      icon: Radar,
+      label: "MONITORED",
+      bg: "bg-rose-950/40 border-rose-800/60 text-rose-400",
+      dot: "bg-rose-500 animate-pulse",
     },
     triaged: {
-      label: "Triaged",
-      bg: "bg-purple-500/10 border-purple-500/30 text-purple-300",
-      icon: FileSearch,
+      label: "TRIAGED",
+      bg: "bg-purple-950/40 border-purple-800/60 text-purple-300",
+      dot: "bg-purple-400",
     },
     analyzing: {
-      label: "Analyzing AI",
-      bg: "bg-cyan-500/10 border-cyan-500/30 text-cyan-300 animate-pulse",
-      icon: Sparkles,
+      label: "ANALYZING",
+      bg: "bg-emerald-950/50 border-emerald-700/60 text-emerald-400",
+      dot: "bg-emerald-400 animate-pulse",
     },
     fix_generated: {
-      label: "Fix Generated",
-      bg: "bg-emerald-500/10 border-emerald-500/30 text-emerald-400",
-      icon: GitPullRequest,
+      label: "FIX_READY",
+      bg: "bg-emerald-950/30 border-emerald-800/60 text-emerald-300",
+      dot: "bg-emerald-500",
     },
     in_review: {
-      label: "In Review",
-      bg: "bg-blue-500/10 border-blue-500/30 text-blue-300",
-      icon: Eye,
+      label: "IN_REVIEW",
+      bg: "bg-amber-950/40 border-amber-800/60 text-amber-300",
+      dot: "bg-amber-400",
     },
     deployed: {
-      label: "Canary Deployed",
-      bg: "bg-indigo-500/10 border-indigo-500/30 text-indigo-300",
-      icon: Rocket,
+      label: "DEPLOYED",
+      bg: "bg-cyan-950/40 border-cyan-800/60 text-cyan-300",
+      dot: "bg-cyan-400",
     },
     resolved: {
-      label: "Resolved",
-      bg: "bg-teal-500/10 border-teal-500/30 text-teal-400",
-      icon: CheckCircle2,
+      label: "RESOLVED",
+      bg: "bg-zinc-900/80 border-zinc-700/60 text-zinc-400",
+      dot: "bg-zinc-500",
     },
   };
 
   const config = configs[status] || configs.detected;
-  const Icon = config.icon;
 
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border backdrop-blur-md transition-colors",
+        "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold tracking-wider border backdrop-blur-sm transition-colors uppercase select-none",
         config.bg,
         className
       )}
     >
-      <Icon className="w-3.5 h-3.5" />
+      <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", config.dot)} />
       {config.label}
     </span>
   );
 }
+

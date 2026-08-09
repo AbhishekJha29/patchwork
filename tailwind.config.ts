@@ -9,6 +9,10 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        mono: ["'JetBrains Mono'", "'Geist Mono'", "'IBM Plex Mono'", "monospace"],
+        sans: ["'JetBrains Mono'", "'Geist Mono'", "monospace"],
+      },
       colors: {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
@@ -43,6 +47,15 @@ const config: Config = {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
+        console: {
+          bg: "#08090a",
+          panel: "#0d0f12",
+          subtle: "#14171d",
+          border: "#1f242d",
+          accent: "#10b981",
+          amber: "#d97706",
+          rose: "#ef4444",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -54,3 +67,4 @@ const config: Config = {
   plugins: [],
 };
 export default config;
+

@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { getAuthSession } from "@/lib/auth";
-import { DashboardClient } from "./DashboardClient";
-import { Incident, Severity, Status } from "@/lib/types";
+import { WorkspaceLayout } from "@/components/WorkspaceLayout";
+import { Incident, Severity, Status, ConnectedRepo, OrgMember } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -9,9 +9,89 @@ export default async function DashboardPage() {
   const session = await getAuthSession();
 
   let incidents: Incident[] = [];
+  let projects: ConnectedRepo[] = [];
+  let teamMembers: OrgMember[] = [];
+  let apiKeys: any[] = [];
 
   if (session?.user?.email) {
     try {
+      const userOrgMember = await db.orgMember.findFirst({
+        where: {
+          user: {
+            email: session.user.email,
+          },
+        },
+        include: {
+          org: {
+            include: {
+              projects: {
+                include: {
+                  incidents: true,
+                },
+              },
+              members: {
+                include: {
+                  user: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (userOrgMember?.org) {
+        projects = userOrgMember.org.projects.map((p) => ({
+          id: p.id,
+          name: p.name,
+          owner: p.name.split("/")[0] || "org",
+          branch: "main",
+          repoUrl: p.repoUrl,
+          deploymentTrackingEnabled: p.deploymentTrackingEnabled,
+          status: "connected",
+          lastSynced: p.createdAt.toLocaleDateString(),
+          incidentsCount: p.incidents.length,
+        }));
+
+        teamMembers = userOrgMember.org.members.map((m) => ({
+          id: m.id,
+          userId: m.userId,
+          orgId: m.orgId,
+          role: m.role,
+          joinedAt: m.joinedAt.toISOString(),
+          user: m.user
+            ? {
+                id: m.user.id,
+                name: m.user.name,
+                email: m.user.email,
+                createdAt: m.user.createdAt.toISOString(),
+              }
+            : undefined,
+        }));
+
+        const dbApiKeys = await db.apiKey.findMany({
+          where: {
+            project: {
+              orgId: userOrgMember.org.id,
+            },
+          },
+          include: {
+            project: true,
+          },
+          orderBy: { createdAt: "desc" },
+        });
+
+        apiKeys = dbApiKeys.map((k) => ({
+          id: k.id,
+          name: k.name,
+          projectId: k.projectId,
+          projectName: k.project.name,
+          keyPrefix: `pw_live_...${k.key.slice(-4)}`,
+          createdAt: k.createdAt.toLocaleDateString(),
+          lastUsedAt: k.lastUsedAt ? k.lastUsedAt.toLocaleString() : "Never",
+          revoked: k.revoked,
+        }));
+      }
+
       // Query real incidents for user's org projects from Prisma
       const dbIncidents = await db.incident.findMany({
         where: {
@@ -99,5 +179,12 @@ export default async function DashboardPage() {
     }
   }
 
-  return <DashboardClient initialIncidents={incidents} />;
+  return (
+    <WorkspaceLayout
+      initialIncidents={incidents}
+      initialProjects={projects}
+      initialTeamMembers={teamMembers}
+      initialApiKeys={apiKeys}
+    />
+  );
 }

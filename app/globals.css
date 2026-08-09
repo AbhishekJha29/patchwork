@@ -1,81 +1,104 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@300;400;500;600;700&family=JetBrains+Mono:ital,wght@0,300..800;1,300..800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 222 47% 7%;
-    --foreground: 210 40% 98%;
+    --background: 220 20% 4%;
+    --foreground: 210 15% 90%;
 
-    --card: 222 47% 9%;
-    --card-foreground: 210 40% 98%;
+    --card: 220 18% 6.5%;
+    --card-foreground: 210 15% 90%;
 
-    --popover: 222 47% 9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 220 18% 6.5%;
+    --popover-foreground: 210 15% 90%;
 
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 155 60% 45%;
+    --primary-foreground: 220 20% 4%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 220 15% 12%;
+    --secondary-foreground: 210 15% 85%;
 
-    --muted: 217.2 32.6% 15%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 220 15% 12%;
+    --muted-foreground: 215 12% 55%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 155 50% 15%;
+    --accent-foreground: 155 60% 75%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 65% 45%;
+    --destructive-foreground: 210 15% 95%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    --border: 220 15% 15%;
+    --input: 220 15% 15%;
+    --ring: 155 60% 45%;
 
-    --radius: 0.5rem;
+    --radius: 0.375rem;
   }
 }
 
 body {
-  color: rgb(241, 245, 249);
-  background: #090d16;
+  color: #c9d1d9;
+  background-color: #08090a;
+  font-family: 'JetBrains Mono', 'Geist Mono', monospace;
   font-feature-settings: "rlig" 1, "calt" 1;
   min-height: 100vh;
 }
 
+/* System Console Scanline Overlay */
+.console-scanlines {
+  background: linear-gradient(
+    rgba(18, 16, 16, 0) 50%,
+    rgba(0, 0, 0, 0.25) 50%
+  ), linear-gradient(
+    90deg,
+    rgba(255, 0, 0, 0.03),
+    rgba(0, 255, 0, 0.01),
+    rgba(0, 0, 255, 0.03)
+  );
+  background-size: 100% 3px, 6px 100%;
+}
+
+.console-grid {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
 /* Custom scrollbars for technical code blocks */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0d1322;
+  background: #090b0e;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
-  border-radius: 4px;
+  background: #1c212b;
+  border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #2d3545;
 }
 
-/* Diff viewer line highlighting */
+/* Diff viewer line highlighting - desaturated terminal style */
 .diff-add {
-  background-color: rgba(16, 185, 129, 0.15);
-  color: #6ee7b7;
-  border-left: 3px solid #10b981;
+  background-color: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+  border-left: 2px solid #10b981;
 }
 
 .diff-remove {
-  background-color: rgba(244, 63, 94, 0.15);
-  color: #fca5a5;
-  border-left: 3px solid #f43f5e;
+  background-color: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  border-left: 2px solid #ef4444;
 }
 
 .diff-header {
-  background-color: rgba(99, 102, 241, 0.15);
-  color: #a5b4fc;
+  background-color: rgba(56, 189, 248, 0.1);
+  color: #38bdf8;
 }
+

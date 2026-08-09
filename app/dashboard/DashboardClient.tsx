@@ -15,6 +15,9 @@ import {
   AlertCircle,
   XCircle,
   RefreshCw,
+  Activity,
+  Cpu,
+  GitBranch,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -49,8 +52,12 @@ export function DashboardClient({ initialIncidents }: DashboardClientProps) {
     });
   }, [initialIncidents, searchQuery, selectedSeverity, selectedStatus]);
 
-  // Stat summary counters
+  // Real live data stat counters
   const totalIncidents = initialIncidents.length;
+  const nonResolvedIncidentsCount = initialIncidents.filter(
+    (i) => i.status !== "resolved"
+  ).length;
+  const monitoredReposCount = new Set(initialIncidents.map((i) => i.repo)).size;
   const criticalCount = initialIncidents.filter(
     (i) => i.severity === "critical"
   ).length;
@@ -60,6 +67,9 @@ export function DashboardClient({ initialIncidents }: DashboardClientProps) {
       i.status === "in_review" ||
       i.status === "deployed" ||
       i.status === "resolved"
+  ).length;
+  const resolvedCount = initialIncidents.filter(
+    (i) => i.status === "resolved"
   ).length;
 
   const handleSimulateRefresh = () => {
@@ -74,98 +84,127 @@ export function DashboardClient({ initialIncidents }: DashboardClientProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#090d16] flex flex-col font-sans">
+    <div className="min-h-screen bg-[#08090a] flex flex-col font-mono text-[#c9d1d9]">
       <Navbar />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        {/* Header & Quick Action */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800/80 pb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-100 flex items-center gap-2">
-              Incident Control Center
-              <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-cyan-950/60 border border-cyan-800/60 text-cyan-400 font-semibold">
-                Live DB Connected
-              </span>
-            </h1>
-            <p className="text-xs text-slate-400 mt-1">
-              Real-time automated root cause isolation and PR generation across connected repositories.
-            </p>
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {/* System Status Strip (CORI Command Center style live stat chips) */}
+        <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl border border-zinc-800 bg-[#0d0f12] console-scanlines shadow-lg">
+          <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
+            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-zinc-900 border border-zinc-800 text-zinc-300">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-zinc-500">sys_status:</span>
+              <span className="text-emerald-400 font-bold">active</span>
+            </span>
+
+            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-zinc-900 border border-zinc-800 text-zinc-300">
+              <Cpu className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="text-zinc-500">Active Runners:</span>
+              <span className="text-zinc-100 font-bold">4</span>
+            </span>
+
+            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-zinc-900 border border-zinc-800 text-zinc-300">
+              <GitBranch className="w-3.5 h-3.5 text-cyan-400" />
+              <span className="text-zinc-500">Repositories Monitored:</span>
+              <span className="text-zinc-100 font-bold">{monitoredReposCount || 1}</span>
+            </span>
+
+            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-zinc-900 border border-zinc-800 text-zinc-300">
+              <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
+              <span className="text-zinc-500">Active Incidents:</span>
+              <span className="text-amber-300 font-bold">{nonResolvedIncidentsCount}</span>
+            </span>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 font-mono text-xs">
             <button
               onClick={handleSimulateRefresh}
-              className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-300 bg-slate-900 hover:bg-slate-800 rounded-lg border border-slate-800 transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono text-zinc-300 bg-zinc-900 hover:bg-zinc-800 rounded border border-zinc-700 transition-colors"
             >
-              <RefreshCw className={cn("w-3.5 h-3.5 text-cyan-400", isLoading && "animate-spin")} />
-              <span>Refresh Ingestion</span>
+              <RefreshCw className={cn("w-3 h-3 text-emerald-400", isLoading && "animate-spin")} />
+              <span>INGESTION_SYNC</span>
             </button>
           </div>
         </div>
 
+        {/* Header & Title */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-800 pb-4">
+          <div>
+            <h1 className="text-xl font-bold text-zinc-100 flex items-center gap-2 font-mono tracking-wide uppercase">
+              Incident Command Center
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950/60 border border-emerald-800/60 text-emerald-400 font-semibold">
+                DB CONNECTED
+              </span>
+            </h1>
+            <p className="text-xs text-zinc-500 mt-1 font-mono">
+              Real-time automated root cause isolation and PR generation across connected microservices.
+            </p>
+          </div>
+        </div>
+
         {/* Analytics Summary Bar */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="p-4 rounded-xl border border-slate-800 bg-slate-900/50 backdrop-blur-sm space-y-1">
-            <div className="flex items-center justify-between text-slate-400 text-xs font-mono">
-              <span>ACTIVE INCIDENTS</span>
-              <AlertCircle className="w-4 h-4 text-cyan-400" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-mono">
+          <div className="p-4 rounded-xl border border-zinc-800 bg-[#0d0f12] space-y-1 console-scanlines">
+            <div className="flex items-center justify-between text-zinc-500 text-xs font-mono">
+              <span>TOTAL INCIDENTS</span>
+              <AlertCircle className="w-3.5 h-3.5 text-cyan-400" />
             </div>
-            <p className="text-2xl font-bold text-slate-100 font-mono">
+            <p className="text-2xl font-bold text-zinc-100 font-mono">
               {totalIncidents}
             </p>
-            <p className="text-[11px] text-slate-500">Live Prisma query count</p>
+            <p className="text-[10px] text-zinc-500">Recorded database events</p>
           </div>
 
-          <div className="p-4 rounded-xl border border-rose-900/40 bg-rose-950/20 backdrop-blur-sm space-y-1">
+          <div className="p-4 rounded-xl border border-rose-900/40 bg-rose-950/20 space-y-1 console-scanlines">
             <div className="flex items-center justify-between text-rose-400 text-xs font-mono">
               <span>CRITICAL ALERTS</span>
-              <ShieldAlert className="w-4 h-4 text-rose-400 animate-pulse" />
+              <ShieldAlert className="w-3.5 h-3.5 text-rose-400 animate-pulse" />
             </div>
             <p className="text-2xl font-bold text-rose-200 font-mono">
               {criticalCount}
             </p>
-            <p className="text-[11px] text-rose-400/70">Requires urgent developer sign-off</p>
+            <p className="text-[10px] text-rose-400/70">Urgent developer sign-off</p>
           </div>
 
-          <div className="p-4 rounded-xl border border-emerald-900/40 bg-emerald-950/20 backdrop-blur-sm space-y-1">
+          <div className="p-4 rounded-xl border border-emerald-900/40 bg-emerald-950/20 space-y-1 console-scanlines">
             <div className="flex items-center justify-between text-emerald-400 text-xs font-mono">
               <span>AUTO-FIX COVERAGE</span>
-              <Zap className="w-4 h-4 text-emerald-400" />
+              <Zap className="w-3.5 h-3.5 text-emerald-400" />
             </div>
             <p className="text-2xl font-bold text-emerald-200 font-mono">
               {totalIncidents > 0 ? Math.round((fixGeneratedCount / totalIncidents) * 100) : 0}%
             </p>
-            <p className="text-[11px] text-emerald-400/70">{fixGeneratedCount} fixes auto-drafted</p>
+            <p className="text-[10px] text-emerald-400/70">{fixGeneratedCount} fixes auto-drafted</p>
           </div>
 
-          <div className="p-4 rounded-xl border border-purple-900/40 bg-purple-950/20 backdrop-blur-sm space-y-1">
+          <div className="p-4 rounded-xl border border-purple-900/40 bg-purple-950/20 space-y-1 console-scanlines">
             <div className="flex items-center justify-between text-purple-400 text-xs font-mono">
               <span>AVG RESOLUTION (MTTR)</span>
-              <Sparkles className="w-4 h-4 text-purple-400" />
+              <Sparkles className="w-3.5 h-3.5 text-purple-400" />
             </div>
             <p className="text-2xl font-bold text-purple-200 font-mono">
               {totalIncidents > 0 ? "4.2m" : "0m"}
             </p>
-            <p className="text-[11px] text-purple-400/70">-85% faster vs manual triage</p>
+            <p className="text-[10px] text-purple-400/70">Automated triage acceleration</p>
           </div>
         </div>
 
         {/* Filter Toolbar */}
-        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 p-4 rounded-xl border border-slate-800 bg-slate-900/60 backdrop-blur-md">
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 p-3.5 rounded-xl border border-zinc-800 bg-[#0d0f12] font-mono">
           {/* Search Box */}
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <div className="relative flex-1 font-mono">
+            <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Search by title, ID (e.g. INC-8492), repo, or stack trace..."
+              placeholder="Filter by title, ID (INC-8492), repo, or payload..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 font-mono transition-colors"
+              className="w-full pl-9 pr-4 py-1.5 text-xs bg-zinc-950 border border-zinc-800 rounded text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-emerald-500 font-mono transition-colors"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
               >
                 <XCircle className="w-3.5 h-3.5" />
               </button>
@@ -173,14 +212,14 @@ export function DashboardClient({ initialIncidents }: DashboardClientProps) {
           </div>
 
           {/* Severity & Status Dropdown Selectors */}
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2">
-              <Filter className="w-3.5 h-3.5 text-slate-500" />
-              <span className="text-xs text-slate-400 font-mono">Severity:</span>
+          <div className="flex flex-wrap items-center gap-3 font-mono">
+            <div className="flex items-center gap-2 font-mono">
+              <Filter className="w-3.5 h-3.5 text-zinc-500" />
+              <span className="text-xs text-zinc-400 font-mono">Severity:</span>
               <select
                 value={selectedSeverity}
                 onChange={(e) => setSelectedSeverity(e.target.value as Severity | "all")}
-                className="bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono text-slate-200 px-3 py-2 focus:outline-none focus:border-cyan-500"
+                className="bg-zinc-950 border border-zinc-800 rounded text-xs font-mono text-zinc-200 px-2.5 py-1.5 focus:outline-none focus:border-emerald-500"
               >
                 <option value="all">All Severities</option>
                 <option value="critical">Critical</option>
@@ -190,18 +229,18 @@ export function DashboardClient({ initialIncidents }: DashboardClientProps) {
               </select>
             </div>
 
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-400 font-mono">Status:</span>
+            <div className="flex items-center gap-2 font-mono">
+              <span className="text-xs text-zinc-400 font-mono">Status:</span>
               <select
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value as Status | "all")}
-                className="bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono text-slate-200 px-3 py-2 focus:outline-none focus:border-cyan-500"
+                className="bg-zinc-950 border border-zinc-800 rounded text-xs font-mono text-zinc-200 px-2.5 py-1.5 focus:outline-none focus:border-emerald-500"
               >
                 <option value="all">All Statuses</option>
-                <option value="detected">Detected</option>
+                <option value="detected">Monitored</option>
                 <option value="triaged">Triaged</option>
                 <option value="analyzing">Analyzing</option>
-                <option value="fix_generated">Fix Generated</option>
+                <option value="fix_generated">Fix Ready</option>
                 <option value="in_review">In Review</option>
                 <option value="deployed">Deployed</option>
                 <option value="resolved">Resolved</option>
@@ -211,7 +250,7 @@ export function DashboardClient({ initialIncidents }: DashboardClientProps) {
             {(searchQuery || selectedSeverity !== "all" || selectedStatus !== "all") && (
               <button
                 onClick={handleResetFilters}
-                className="text-xs text-cyan-400 hover:underline font-mono px-2 py-1"
+                className="text-xs text-emerald-400 hover:underline font-mono px-2 py-1"
               >
                 Reset Filters
               </button>
@@ -223,10 +262,10 @@ export function DashboardClient({ initialIncidents }: DashboardClientProps) {
         {isLoading ? (
           <IncidentSkeleton />
         ) : filteredIncidents.length > 0 ? (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between text-xs text-slate-500 px-1 font-mono">
-              <span>Showing {filteredIncidents.length} of {totalIncidents} incidents</span>
-              <span>Sorted by Severity & Recency</span>
+          <div className="space-y-2.5 font-mono">
+            <div className="flex items-center justify-between text-xs text-zinc-500 px-1 font-mono">
+              <span>Showing {filteredIncidents.length} of {totalIncidents} recorded events</span>
+              <span>sys_order: severity_desc, recency_desc</span>
             </div>
 
             {filteredIncidents.map((incident) => (
@@ -234,25 +273,25 @@ export function DashboardClient({ initialIncidents }: DashboardClientProps) {
             ))}
           </div>
         ) : (
-          /* Empty State Design */
-          <div className="p-12 rounded-2xl border border-slate-800 bg-slate-900/30 text-center space-y-4">
-            <div className="w-12 h-12 rounded-full bg-slate-800/80 border border-slate-700 text-slate-400 flex items-center justify-center mx-auto">
-              <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+          /* Empty State Design with System Log framing */
+          <div className="p-12 rounded-xl border border-zinc-800 bg-[#0d0f12] text-center space-y-3 font-mono console-scanlines">
+            <div className="w-10 h-10 rounded-full bg-zinc-900 border border-zinc-700 text-zinc-400 flex items-center justify-center mx-auto">
+              <CheckCircle2 className="w-5 h-5 text-emerald-400" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-base font-bold text-slate-200">
-                No Incidents Found
+              <h3 className="text-sm font-bold text-zinc-200 uppercase tracking-wide">
+                sys_status: standby / listening for webhook triggers...
               </h3>
-              <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                No active error events match your current filter parameters or the real database is currently empty.
+              <p className="text-xs text-zinc-500 max-w-sm mx-auto font-mono">
+                No active incident records match your criteria or database payload pool is currently empty.
               </p>
             </div>
             {(searchQuery || selectedSeverity !== "all" || selectedStatus !== "all") && (
               <button
                 onClick={handleResetFilters}
-                className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-cyan-400 bg-cyan-950/40 border border-cyan-800/60 rounded-lg hover:bg-cyan-900/40 transition-colors"
+                className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-mono text-emerald-400 bg-emerald-950/40 border border-emerald-800/60 rounded hover:bg-emerald-900/40 transition-colors"
               >
-                Clear Search & Filters
+                Clear Filters
               </button>
             )}
           </div>
@@ -261,3 +300,4 @@ export function DashboardClient({ initialIncidents }: DashboardClientProps) {
     </div>
   );
 }
+

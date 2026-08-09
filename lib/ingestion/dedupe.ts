@@ -4,6 +4,8 @@ import { triageIncident } from "@/lib/ai/triage";
 import { analyzeRootCause } from "@/lib/analysis/root-cause";
 import { generateAndOpenFix } from "@/lib/analysis/apply-fix";
 import { parseOwnerRepo, getCommitDiff } from "@/lib/github/client";
+import { emitEvent } from "@/lib/events/dispatcher";
+import { transitionIncident } from "@/lib/workflow/status";
 
 // Easily adjustable confidence threshold to gate automatic hotfix generation
 export const HOTFIX_CONFIDENCE_THRESHOLD = 50;
@@ -69,9 +71,10 @@ export async function processIngestion({
     };
   }
 
-  // Fetch project details to get connected repoUrl
+  // Fetch project details to get connected repoUrl and Org
   const project = await db.project.findUnique({
     where: { id: projectId },
+    include: { org: true },
   });
 
   // Create new Incident (status DETECTED, severity default MEDIUM) + StackFrames + AuditLog
@@ -104,6 +107,16 @@ export async function processIngestion({
     },
   });
 
+  if (project?.org) {
+    emitEvent({
+      type: "INCIDENT_CREATED",
+      payload: {
+        incident: newIncident,
+        org: project.org,
+      },
+    });
+  }
+
   const projectRepoUrl = project?.repoUrl || repo || "";
 
   // Step 1: Perform AI Triage synchronously for new incidents
@@ -123,7 +136,6 @@ export async function processIngestion({
         aiSummary: triage.summary,
         aiTags: triage.tags,
         triagedAt: new Date(),
-        status: "TRIAGED",
         auditLogs: {
           create: {
             type: "AI_TRIAGE",
@@ -132,6 +144,9 @@ export async function processIngestion({
         },
       },
     });
+
+    // Use transitionIncident for state machine & audit log & event emission
+    await transitionIncident(newIncident.id, "TRIAGED", "system");
   } catch (triageErr) {
     console.error(`AI Triage error during ingestion for incident ${newIncident.id}:`, triageErr);
   }

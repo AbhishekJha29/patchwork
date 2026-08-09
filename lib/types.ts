@@ -40,9 +40,12 @@ export interface Fix {
   id?: string;
   diff: string;
   prUrl?: string;
+  prNumber?: number;
   prTitle?: string;
   prDescription: string;
   branchName?: string;
+  mergedAt?: string | null;
+  deployedAt?: string | null;
   status: "draft" | "pr_opened" | "failed" | "created" | "merged" | "applied" | string;
 }
 
@@ -84,6 +87,8 @@ export interface ConnectedRepo {
   name: string;
   owner: string;
   branch: string;
+  repoUrl?: string;
+  deploymentTrackingEnabled?: boolean;
   status: "connected" | "syncing" | "error" | string;
   lastSynced: string;
   incidentsCount: number;

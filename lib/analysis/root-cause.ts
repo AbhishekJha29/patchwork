@@ -278,7 +278,6 @@ Required JSON schema:
         where: { id: incidentId },
         data: {
           rootCauseCommitId: winningCommitDbId,
-          status: "ANALYZING",
         },
       });
 
@@ -291,13 +290,6 @@ Required JSON schema:
         },
       });
     } else {
-      await db.incident.update({
-        where: { id: incidentId },
-        data: {
-          status: "ANALYZING",
-        },
-      });
-
       await db.auditLog.create({
         data: {
           incidentId,
@@ -305,6 +297,14 @@ Required JSON schema:
           message: "Root cause analysis inconclusive",
         },
       });
+    }
+
+    // Transition incident status to ANALYZING via workflow manager
+    try {
+      const { transitionIncident } = await import("@/lib/workflow/status");
+      await transitionIncident(incidentId, "ANALYZING", "system");
+    } catch (transErr) {
+      console.warn(`[Root Cause Analysis] Transition to ANALYZING skipped/error:`, transErr);
     }
   } catch (dbErr: any) {
     console.error("[Root Cause Analysis] Failed saving commit records to DB:", dbErr?.message || dbErr);

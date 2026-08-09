@@ -41,12 +41,47 @@ model User {
 }
 
 model Org {
-  id        String      @id @default(cuid())
-  name      String
-  slug      String      @unique
-  createdAt DateTime    @default(now())
-  members   OrgMember[]
-  projects  Project[]
+  id                   String                @id @default(cuid())
+  name                 String
+  slug                 String                @unique
+  createdAt            DateTime              @default(now())
+  members              OrgMember[]
+  projects             Project[]
+  notificationSettings NotificationSettings?
+  notificationLogs     NotificationLog[]
+}
+
+enum NotificationProvider {
+  SLACK
+  EMAIL
+}
+
+model NotificationSettings {
+  id                    String   @id @default(cuid())
+  orgId                 String   @unique
+  slackWebhookUrl       String?
+  emailEnabled          Boolean  @default(false)
+  slackEnabled          Boolean  @default(false)
+  notifyCriticalIncident Boolean  @default(true)
+  notifyReviewOpened    Boolean  @default(true)
+  notifyResolved        Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  org Org @relation(fields: [orgId], references: [id], onDelete: Cascade)
+}
+
+model NotificationLog {
+  id           String               @id @default(cuid())
+  orgId        String
+  provider     NotificationProvider
+  eventType    String
+  recipient    String?
+  success      Boolean
+  errorMessage String?              @db.Text
+  timestamp    DateTime             @default(now())
+
+  org Org @relation(fields: [orgId], references: [id], onDelete: Cascade)
 }
 
 model OrgMember {
@@ -63,13 +98,14 @@ model OrgMember {
 }
 
 model Project {
-  id        String     @id @default(cuid())
-  orgId     String
-  name      String
-  repoUrl   String
-  createdAt DateTime   @default(now())
-  incidents Incident[]
-  apiKeys   ApiKey[]
+  id                        String     @id @default(cuid())
+  orgId                     String
+  name                      String
+  repoUrl                   String
+  deploymentTrackingEnabled Boolean    @default(false)
+  createdAt                 DateTime   @default(now())
+  incidents                 Incident[]
+  apiKeys                   ApiKey[]
 
   org Org @relation(fields: [orgId], references: [id], onDelete: Cascade)
 }
@@ -155,6 +191,9 @@ model Fix {
   prTitle       String?
   prDescription String?   @db.Text
   branchName    String?
+  prNumber      Int?
+  mergedAt      DateTime?
+  deployedAt    DateTime?
   status        FixStatus @default(DRAFT)
   createdAt     DateTime  @default(now())
 
