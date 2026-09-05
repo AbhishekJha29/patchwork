@@ -2,6 +2,7 @@ import React from "react";
 import { LandingNav } from "@/components/landing/LandingNav";
 import { Hero } from "@/components/landing/Hero";
 import { WorkflowSection } from "@/components/landing/WorkflowSection";
+import { ShowcaseSection } from "@/components/landing/ShowcaseSection";
 import { SafetySection } from "@/components/landing/SafetySection";
 import { FaqSection } from "@/components/landing/FaqSection";
 import { FinalCtaSection } from "@/components/landing/FinalCtaSection";
@@ -20,6 +21,7 @@ export default function MarketingLandingPage() {
       <main>
         <Hero />
         <WorkflowSection />
+        <ShowcaseSection />
         <SafetySection />
         <FaqSection />
         <FinalCtaSection />
